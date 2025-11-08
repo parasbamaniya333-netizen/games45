@@ -1,328 +1,414 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flappy Bird — Clouds & Coins (Animated)</title>
-  <style>
-    :root{--bg:#70c5ce}
-    html,body{height:100%;margin:0}
-    body{
-      display:flex;align-items:center;justify-content:center;
-      background:linear-gradient(#70c5ce,#bfe6e6);
-      font-family:Arial,Helvetica,sans-serif;overflow:hidden
-    }
-    #gameWrap{
-      position:relative;width:420px;max-width:96vw;height:640px;
-      background:linear-gradient(#87d6e0,#dfe7b8);
-      border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.2);
-      overflow:hidden
-    }
-    canvas{display:block;width:100%;height:100%}
-    #overlay{
-      position:absolute;inset:0;display:flex;flex-direction:column;
-      align-items:center;justify-content:center;
-      background:rgba(0,0,0,0.45);color:#fff;padding:18px;
-      box-sizing:border-box;z-index:5
-    }
-    #overlay.hidden{display:none}
-    button{
-      appearance:none;border:0;padding:10px 18px;border-radius:8px;
-      background:#ffd54f;color:#000;font-weight:700;cursor:pointer
-    }
-    #scoreBox{
-      position:absolute;left:12px;top:12px;color:#fff;font-weight:700;
-      z-index:6;text-shadow:0 2px 6px rgba(0,0,0,0.4)
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Flappy Arcade (Pixel Edition)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: linear-gradient(to right, #EAECC6, #2BC0E4);
+    font-family: 'Press Start 2P', cursive;
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    touch-action: manipulation;
+  }
+
+  #soundButton {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.45);
+    color: white;
+    border: none;
+    font-size: calc(1.4vw + 10px);
+    border-radius: 50%;
+    padding: 10px;
+    cursor: pointer;
+  }
+
+  #uiBox {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+    background: linear-gradient(to right, #FFC837, #FF8008);
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: calc(1vw + 8px);
+    text-align: left;
+    color: #111;
+  }
+
+  .menu-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(to right, #DDEFBB, #FFEEEE);
+    border-radius: 12px;
+    padding: 24px 32px;
+    text-align: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    z-index: 11;
+    max-width: 90%;
+  }
+
+  .menu-box h1 {
+    margin: 0 0 10px;
+    color: #ff5722;
+    font-size: calc(2vw + 16px);
+  }
+
+  .menu-box p {
+    font-size: calc(1vw + 6px);
+    margin-bottom: 15px;
+  }
+
+  .menu-box button {
+    background: #ff5722;
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    font-size: calc(1vw + 10px);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .menu-box button:hover {
+    background: #ff784e;
+  }
+
+  .flappy-logo {
+    display: inline-block;
+    letter-spacing: 4px;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .flappy-logo .letter {
+    display: inline-block;
+    font-size: calc(3vw + 20px);
+    padding: 2px 1px;
+    margin: 0 1px;
+    color: #fff;
+    -webkit-text-stroke: 2px #000;
+    text-shadow: 2px 2px 0 #000;
+  }
+
+  footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: linear-gradient(to right, #A5FECB, #20BDFF, #5433FF);
+    text-align: center;
+    font-size: calc(0.8vw + 8px);
+    padding: 6px 0;
+    z-index: 15;
+    color: white;
+    letter-spacing: 0.4px;
+  }
+
+  footer strong {
+    color: #ffd700;
+  }
+
+  footer a {
+    color: #ffd700;
+    text-decoration: none;
+  }
+
+  footer a:hover {
+    text-decoration: underline;
+  }
+</style>
 </head>
 <body>
-  <div id="gameWrap">
-    <canvas id="gameCanvas" width="420" height="640"></canvas>
-    <div id="scoreBox">Score: 0 | Best: 0</div>
-    <div id="overlay">
-      <h2 id="title">FLAPPY BIRD</h2>
-      <p id="subtitle">Click / Tap / Space to flap — Game starts on first flap</p>
-      <button id="startBtn">Start</button>
-    </div>
-  </div>
+<canvas id="gameCanvas"></canvas>
+
+<div id="uiBox">Score: 0 | High Score: 0 | Time: 0:00</div>
+<button id="soundButton">🔊</button>
+
+<div id="startMenu" class="menu-box">
+  <h1 id="flappyLogo" class="flappy-logo" aria-hidden="true"></h1>
+  <p>Collect coins for +5 points!</p>
+  <button id="startBtn">START GAME</button>
+</div>
+
+<div id="restartMenu" class="menu-box" style="display:none;">
+  <h1>💀 GAME OVER 💀</h1>
+  <p id="finalScore">Score: 0</p>
+  <button id="restartBtn">RESTART</button>
+</div>
+
+<footer>
+  🎮 Created by: <strong>Dharam Rathod, Paras Bamaniya, Nikunj Jagatiya</strong> | Flappy Dogesh © 2025
+</footer>
 
 <script>
-(function(){
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  const overlay = document.getElementById('overlay');
-  const startBtn = document.getElementById('startBtn');
-  const scoreBox = document.getElementById('scoreBox');
-  const title = document.getElementById('title');
-  const subtitle = document.getElementById('subtitle');
+/* === Setup === */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const uiBox = document.getElementById('uiBox');
+const soundButton = document.getElementById('soundButton');
+const startMenu = document.getElementById('startMenu');
+const restartMenu = document.getElementById('restartMenu');
+const finalScore = document.getElementById('finalScore');
 
-  const W = 420, H = 640;
-  const PIPE_GAP = 140;
-  const PIPE_MIN_SPACING = 180;
+ctx.imageSmoothingEnabled = false; // pixel style
 
-  let bird, pipes, gravity, baseY, score, bestScore, started, gameOver, rafId;
-  let clouds = [];
-  let audioInitialized = false;
-  let flapSound, hitSound, pointSound, coinSound;
-  let coinImg = new Image();
-  coinImg.src = 'https://cdn-icons-png.flaticon.com/512/138/138292.png';
+const baseVisibleHeight = 112;
+let scale = 1, groundY = 0;
 
-  let cloudImg = new Image();
-  cloudImg.src = 'https://cdn-icons-png.flaticon.com/512/414/414927.png';
+function resizeCanvas() {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  scale = Math.min(innerWidth / 480, innerHeight / 640);
+  groundY = canvas.height - baseVisibleHeight * scale;
+}
+window.addEventListener('resize', resizeCanvas);
 
-  // 🐤 Flappy Bird frames
-  const birdFrames = [
-    "https://raw.githubusercontent.com/sourabhv/FlapPyBird/master/assets/sprites/yellowbird-upflap.png",
-    "https://raw.githubusercontent.com/sourabhv/FlapPyBird/master/assets/sprites/yellowbird-midflap.png",
-    "https://raw.githubusercontent.com/sourabhv/FlapPyBird/master/assets/sprites/yellowbird-downflap.png"
-  ].map(src => { const img = new Image(); img.src = src; return img; });
+/* === Assets === */
+const img = (url) => { const i = new Image(); i.crossOrigin = "anonymous"; i.src = url; return i; };
 
-  let birdFrameIndex = 0;
-  let birdFrameTime = 0;
+const charImg = img("https://i.postimg.cc/Yvzmkd6K/Whats-App-Image-2025-11-07-at-6-40-03-PM-removebg-preview.png");
+const bgImg = img("https://i.postimg.cc/VrQTM9Zy/Whats-App-Image-2025-11-07-at-7-41-23-PM-removebg-preview.png");
+const baseImg = img("https://i.ibb.co/V7vh8Hv/base-img.png");
+const pipeImg = img("https://raw.githubusercontent.com/sourabhv/FlapPyBird/master/assets/sprites/pipe-green.png");
+const coinImg = img("https://i.postimg.cc/4YghrD9N/Whats-App-Image-2025-11-07-at-6-34-56-PM-removebg-preview.png");
 
-  function initAudio(){
-    if (audioInitialized) return;
-    audioInitialized = true;
-    flapSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_6093a8b27d.mp3?filename=click-124467.mp3');
-    hitSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_ae90bbd59b.mp3?filename=error-2-126514.mp3');
-    pointSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_2a6bb34f0c.mp3?filename=coin-collect-retro-8-bit-sound-effect-145251.mp3');
-    coinSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_2a6bb34f0c.mp3?filename=coin-collect-retro-8-bit-sound-effect-145251.mp3');
+/* === Sounds === */
+const sounds = {
+  flap: new Audio("https://archive.org/download/fart-with-reverb-39675/fart-with-reverb-39675.mp3"),
+  coin: new Audio("https://archive.org/download/disgusting-chewing-46456/disgusting-chewing-46456.mp3"),
+  die: new Audio("https://archive.org/download/old-dog-howling-390287/old-dog-howling-390287.mp3"),
+  bg: new Audio("https://archive.org/download/cartoon-funny-music-430820/cartoon-funny-music-430820.mp3")
+};
+sounds.bg.loop = true; sounds.bg.volume = 0.9;
+let soundEnabled = true, soundUnlocked = false;
+
+function unlockSound() {
+  if (soundUnlocked) return;
+  // attempt to play background to unlock audio on mobile
+  sounds.bg.play().then(() => {
+    soundUnlocked = true;
+    if (!soundEnabled) sounds.bg.pause();
+  }).catch(() => {
+    // user gesture required; nothing else needed
+  });
+}
+document.addEventListener('click', unlockSound, { once: true });
+document.addEventListener('touchstart', unlockSound, { once: true });
+
+soundButton.onclick = () => {
+  soundEnabled = !soundEnabled;
+  soundButton.textContent = soundEnabled ? '🔊' : '🔇';
+  if (soundEnabled && soundUnlocked) {
+    sounds.bg.currentTime = sounds.bg.currentTime || 0;
+    sounds.bg.play().catch(() => {});
+  } else {
+    sounds.bg.pause();
+  }
+};
+
+/* === Game Vars === */
+let bird, pipes, coins, score, highScore, baseX, frame, started, dying, gameOver, startTime;
+const gravity = 0.5, jump = -8, gap = 152;
+let pipeGapX = 280;
+
+/* === Init === */
+function init() {
+  resizeCanvas();
+  bird = { x: 99 * scale, y: canvas.height / 6, vy: 0, r: 20 * scale };
+  pipes = []; coins = []; frame = 0; score = 0; dying = false; gameOver = false; started = false;
+  baseX = 0; highScore = parseInt(localStorage.getItem('flappyHighScore') || '0', 10);
+  uiBox.innerText = Score: ${score} | High Score: ${highScore} | Time: 0:00;
+  startMenu.style.display = 'block'; restartMenu.style.display = 'none';
+  startTime = null;
+  if (soundEnabled && soundUnlocked) { sounds.bg.currentTime = 0; sounds.bg.play().catch(()=>{}); }
+}
+init();
+
+/* === Controls === */
+function flap() {
+  if (!started || gameOver || dying) return;
+  bird.vy = jump * scale;
+  if (soundEnabled) { sounds.flap.currentTime = 0; sounds.flap.play().catch(() => {}); }
+}
+document.addEventListener('keydown', e => { if (e.code === 'Space') flap(); });
+canvas.addEventListener('click', () => { if (started) flap(); });
+document.addEventListener('touchstart', (e) => { 
+  // if the start menu is visible and touch occurs on start button, leave it to startBtn handler
+  if (started) flap(); 
+}, { passive: true });
+
+document.getElementById('startBtn').onclick = () => {
+  started = true; startMenu.style.display = 'none';
+  startTime = Date.now();
+  if (soundEnabled && soundUnlocked) sounds.bg.play().catch(()=>{});
+  requestAnimationFrame(update);
+};
+document.getElementById('restartBtn').onclick = () => { restartMenu.style.display = 'none'; init(); };
+
+/* === Pipes === */
+function makePipe() {
+  const minTop = 60 * scale;
+  const maxTop = canvas.height - gap * scale - 150 * scale;
+  const top = Math.max(minTop, Math.random() * (maxTop - minTop) + minTop);
+  pipes.push({ x: canvas.width, top, passed: false, w: 70 * scale });
+  if (Math.random() > 0.45) {
+    const coinY = top + (gap * scale) / 4;
+    coins.push({ x: canvas.width + 40 * scale, y: coinY, r: 18 * scale, collected: false });
+  }
+}
+
+/* === Base === */
+function drawBase() {
+  baseX -= 4 * scale;
+  const actualW = baseImg.naturalWidth || 500;
+  const actualH = baseImg.naturalHeight || 100;
+  const baseW = actualW * scale;
+  const visibleH = baseVisibleHeight * scale;
+  if (baseW === 0) return; // safety if image not loaded yet
+  if (baseX <= -baseW) baseX = 0;
+  for (let i = 0; i < Math.ceil(canvas.width / baseW) + 1; i++) {
+    const x = baseX + i * baseW;
+    ctx.drawImage(baseImg, 0, actualH - baseVisibleHeight, actualW, baseVisibleHeight, x, groundY, baseW, visibleH);
+  }
+}
+
+/* === Update === */
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (bgImg.complete) ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+
+  // spawn pipes if needed
+  if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - pipeGapX * scale) makePipe();
+
+  if (!dying) bird.vy += gravity * scale;
+  bird.y += bird.vy;
+
+  for (const p of pipes) {
+    p.x -= 2 * scale;
+    if (!p.passed && p.x + p.w / 2 < bird.x) { p.passed = true; score++; }
   }
 
-  function safePlay(a){ if (!a) return; try{ a.currentTime = 0; a.play(); }catch(e){} }
-  function updateScoreBox(){ scoreBox.textContent = `Score: ${score} | Best: ${bestScore}`; }
-
-  function resetState(){
-    bird = { x: 80, y: H/2, r: 14, vy: 0 };
-    pipes = [];
-    gravity = 0.45;
-    baseY = H - 80;
-    score = 0;
-    bestScore = parseInt(localStorage.getItem('flappy_best') || '0', 10) || 0;
-    started = false;
-    gameOver = false;
-    rafId = null;
-    createClouds();
-    updateScoreBox();
-    overlay.classList.remove('hidden');
-    startBtn.textContent = 'Start';
-    title.textContent = 'FLAPPY BIRD';
-    subtitle.textContent = 'Click / Tap / Space to flap — Game starts on first flap';
-    resizeCanvas();
-    renderInitial();
+  for (const c of coins) {
+    c.x -= 2 * scale;
+    if (!c.collected) {
+      const dx = bird.x - c.x, dy = bird.y - c.y;
+      if (Math.hypot(dx, dy) < bird.r + c.r) {
+        c.collected = true; score += 5;
+        if (soundEnabled) { sounds.coin.currentTime = 0; sounds.coin.play().catch(() => {}); }
+      }
+    }
   }
 
-  function createClouds(){
-    clouds = [];
-    for(let i=0; i<6; i++){
-      clouds.push({
-        x: Math.random()*W,
-        y: Math.random()*H*0.5,
-        size: 40 + Math.random()*60,
-        speed: 0.3 + Math.random()*0.4
-      });
+  // draw pipes
+  for (const p of pipes) {
+    const w = p.w;
+    const pImgW = pipeImg.naturalWidth || 52;
+    const pImgH = pipeImg.naturalHeight || 320;
+    const drawH = pImgH * (w / pImgW);
+    // top pipe (flip)
+    ctx.drawImage(pipeImg, p.x, p.top - drawH, w, drawH);
+    // bottom pipe
+    ctx.drawImage(pipeImg, p.x, p.top + gap * scale, w, drawH);
+  }
+
+  // draw coins
+  for (const c of coins) {
+    if (!c.collected && coinImg.complete) ctx.drawImage(coinImg, c.x - c.r, c.y - c.r, c.r * 2, c.r * 2);
+  }
+
+  // draw bird (if loaded, otherwise draw circle)
+  if (charImg.complete) {
+    ctx.drawImage(charImg, bird.x - bird.r, bird.y - bird.r, 60 * scale, 60 * scale);
+  } else {
+    ctx.beginPath();
+    ctx.fillStyle = '#FFDD55';
+    ctx.arc(bird.x, bird.y, bird.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  drawBase();
+
+  // update UI time safely (startTime may be null until game started)
+  let timeText = "0:00";
+  if (startTime) {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const mins = Math.floor(elapsed / 60);
+    const secs = (elapsed % 60).toString().padStart(2, '0');
+    timeText = ${mins}:${secs};
+  }
+  uiBox.innerText = Score: ${score} | High Score: ${highScore} | Time: ${timeText};
+
+  if (!dying) {
+    for (const p of pipes) {
+      if (bird.x + bird.r > p.x && bird.x - bird.r < p.x + p.w) {
+        if (bird.y - bird.r < p.top || bird.y + bird.r > p.top + gap * scale) triggerDie();
+      }
+    }
+    if (bird.y + bird.r >= groundY || bird.y - bird.r < 0) triggerDie();
+  }
+
+  if (dying) {
+    bird.vy += gravity * scale * 1.5;
+    if (bird.y + bird.r >= groundY) {
+      bird.y = groundY - bird.r; dying = false; gameOver = true;
+      if (score > highScore) { highScore = score; localStorage.setItem('flappyHighScore', highScore); }
+      showGameOver(); return;
     }
   }
 
-  function drawClouds(){
-    clouds.forEach(c=>{
-      ctx.globalAlpha = 0.8;
-      ctx.drawImage(cloudImg, c.x, c.y, c.size, c.size*0.6);
-      ctx.globalAlpha = 1;
-      c.x -= c.speed;
-      if (c.x < -c.size) {
-        c.x = W + Math.random()*80;
-        c.y = Math.random()*H*0.5;
-      }
-    });
+  // cleanup off-screen objects
+  pipes = pipes.filter(p => p.x + p.w > -50);
+  coins = coins.filter(c => c.x > -100 && !c.collected);
+
+  if (!gameOver) requestAnimationFrame(update);
+}
+
+/* === GameOver === */
+function triggerDie() {
+  if (!dying) {
+    dying = true;
+    if (soundEnabled) { sounds.die.currentTime = 0; sounds.die.play().catch(() => {}); }
   }
+}
 
-  function resizeCanvas(){
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-  }
+function showGameOver() {
+  if (soundEnabled && soundUnlocked) sounds.bg.pause();
+  finalScore.innerText = Score: ${score} | High Score: ${highScore};
+  restartMenu.style.display = 'block';
+}
 
-  function spawnPipe(){
-    const gap = PIPE_GAP;
-    const minTop = 40;
-    const maxTop = baseY - gap - 40;
-    const top = Math.floor(Math.random() * (maxTop - minTop + 1)) + minTop;
-    const last = pipes.length ? pipes[pipes.length - 1] : null;
-    const startX = last ? Math.max(W + 10, last.x + PIPE_MIN_SPACING) : W + 10;
-    pipes.push({
-      x: startX, w: 56, top: top, bottom: top + gap,
-      passed: false,
-      coin: { x: startX + 28, y: top + gap / 2, r: 10, collected: false }
-    });
-  }
+/* === Title === */
+const titleText = " FLAPPY DOGESH ";
+const titleColors = ["#f1e26d", "#e76aa0", "#bfe7ff", "#6f6bff", "#9ee072", "#d17fb6", "#e0e26d", "#97d6ff", "#ffffff"];
+const logo = document.getElementById('flappyLogo');
+logo.innerHTML = "";
+for (let i = 0; i < titleText.length; i++) {
+  const ch = titleText[i];
+  const span = document.createElement('span');
+  span.className = 'letter';
+  span.textContent = ch;
+  if (ch !== ' ') span.style.color = titleColors[i % titleColors.length];
+  logo.appendChild(span);
+}
 
-  // 🐤 Draw Flappy Bird with animated wings
-  function drawBird(){
-    const birdSize = 34;
-    birdFrameTime++;
-    if (birdFrameTime % 8 === 0) birdFrameIndex = (birdFrameIndex + 1) % birdFrames.length;
-    const img = birdFrames[birdFrameIndex];
-    ctx.save();
-    ctx.translate(bird.x, bird.y);
-    ctx.drawImage(img, -birdSize/2, -birdSize/2, birdSize, birdSize);
-    ctx.restore();
-  }
-
-  function drawPipes(){
-    pipes.forEach(p=>{
-      ctx.fillStyle = '#2ea44f';
-      ctx.fillRect(p.x, 0, p.w, p.top);
-      ctx.fillStyle = '#257a3b';
-      ctx.fillRect(p.x, p.top, p.w, 8);
-      ctx.fillStyle = '#2ea44f';
-      ctx.fillRect(p.x, p.bottom, p.w, baseY - p.bottom);
-      ctx.fillStyle = '#257a3b';
-      ctx.fillRect(p.x, p.bottom - 8, p.w, 8);
-
-      if (!p.coin.collected) {
-        ctx.drawImage(coinImg, p.coin.x - 10, p.coin.y - 10, 20, 20);
-      }
-    });
-  }
-
-  function renderInitial(){
-    ctx.clearRect(0,0,W,H);
-    const g = ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0,'#70c5ce'); g.addColorStop(1,'#bfe6e6');
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,W,H);
-    drawClouds();
-    drawBird();
-    ctx.fillStyle = '#8bc34a';
-    ctx.fillRect(0,baseY,W,80);
-    ctx.fillStyle = '#fff';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Click / Tap / Space to flap — Game starts on first flap', W/2, H/2 + 120);
-  }
-
-  function render(){
-    ctx.clearRect(0,0,W,H);
-    const g = ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0,'#70c5ce'); g.addColorStop(1,'#bfe6e6');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-    drawClouds();
-    drawPipes();
-    ctx.fillStyle = '#8bc34a'; ctx.fillRect(0,baseY,W,80);
-    drawBird();
-    ctx.fillStyle = '#fff'; ctx.font = '28px Arial'; ctx.textAlign = 'center';
-    ctx.fillText(score, W/2, 64);
-  }
-
-  function circleHit(bx, by, br, cx, cy, cr){
-    const dx = bx - cx;
-    const dy = by - cy;
-    return Math.sqrt(dx*dx + dy*dy) < br + cr;
-  }
-
-  function gameLoop(){
-    if (!started || gameOver) return;
-
-    bird.vy += gravity;
-    bird.y += bird.vy;
-
-    if (Math.random() < 0.018) spawnPipe();
-
-    for (let i = pipes.length -1; i >= 0; i--){
-      const p = pipes[i];
-      const speed = 2.4 + Math.min(1.6, score*0.03);
-      p.x -= speed;
-      p.coin.x -= speed;
-
-      if (!p.passed && p.x + p.w < bird.x){
-        p.passed = true;
-        score++;
-        safePlay(pointSound);
-        updateScoreBox();
-      }
-
-      if (!p.coin.collected && circleHit(bird.x, bird.y, bird.r, p.coin.x, p.coin.y, p.coin.r)){
-        p.coin.collected = true;
-        score += 5;
-        safePlay(coinSound);
-        updateScoreBox();
-      }
-
-      if (p.x + p.w < -20) pipes.splice(i,1);
-    }
-
-    for (const p of pipes){
-      const bx = bird.x - bird.r, by = bird.y - bird.r, bw = bird.r*2, bh = bird.r*2;
-      if ((bx < p.x + p.w && bx + bw > p.x && by < p.top) ||
-          (bx < p.x + p.w && bx + bw > p.x && by + bh > p.bottom)){
-        endGame();
-      }
-    }
-
-    if (bird.y + bird.r > baseY){ bird.y = baseY - bird.r; endGame(); }
-    if (bird.y - bird.r < 0){ bird.y = bird.r; bird.vy = 0; }
-
-    render();
-    rafId = requestAnimationFrame(gameLoop);
-  }
-
-  function flap(){
-    initAudio();
-    if (!started) { startGame(); return; }
-    if (gameOver) return;
-    bird.vy = -7.8;
-    safePlay(flapSound);
-  }
-
-  function startGame(){
-    if (rafId) cancelAnimationFrame(rafId);
-    bird = { x: 80, y: H/2, r: 14, vy: 0 };
-    pipes = [];
-    createClouds();
-    gravity = 0.45; baseY = H - 80;
-    score = 0; gameOver = false; started = true;
-    bestScore = parseInt(localStorage.getItem('flappy_best') || '0', 10) || 0;
-    updateScoreBox();
-    overlay.classList.add('hidden');
-    rafId = requestAnimationFrame(gameLoop);
-  }
-
-  function endGame(){
-    if (gameOver) return;
-    gameOver = true; started = false;
-    safePlay(hitSound);
-    bestScore = Math.max(score, bestScore);
-    localStorage.setItem('flappy_best', String(bestScore));
-    updateScoreBox();
-    title.textContent = 'GAME OVER';
-    subtitle.textContent = `Score: ${score} — Best: ${bestScore}`;
-    startBtn.textContent = 'Retry';
-    overlay.classList.remove('hidden');
-  }
-
-  window.addEventListener('keydown', e=>{ if (e.code==='Space'){ e.preventDefault(); flap(); } });
-  canvas.addEventListener('click', ()=>{ flap(); });
-  canvas.addEventListener('touchstart', e=>{ e.preventDefault(); flap(); }, {passive:false});
-  startBtn.addEventListener('click', ()=>{ initAudio(); startGame(); });
-
-  function fitContainer(){
-    const wrap = document.getElementById('gameWrap');
-    const maxW = Math.min(window.innerWidth * 0.98, 420);
-    const maxH = Math.min(window.innerHeight * 0.95, 640);
-    const scale = Math.min(maxW / W, maxH / H);
-    wrap.style.transform = `scale(${scale})`;
-    wrap.style.transformOrigin = 'center center';
-  }
-
-  window.addEventListener('resize', ()=>{ fitContainer(); resizeCanvas(); render(); });
-  resetState();
-  fitContainer();
-})();
+console.log("Flappy Arcade (Pixel Edition) ready!");
 </script>
 </body>
 </html>
+
